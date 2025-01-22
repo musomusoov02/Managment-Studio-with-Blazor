@@ -17,18 +17,10 @@ namespace Managment_Studio_with_Blazor
         {
             var builder = WebApplication.CreateBuilder(args);
 
-            // Add services to the container.
             builder.Services.AddRazorPages();
             builder.Services.AddServerSideBlazor();
             builder.Services.AddSingleton<WeatherForecastService>();
             builder.Services.AddSingleton<IDataBaseService, DataBaseService>();
-            
-
-
-
-
-
-
 
             var app = builder.Build();
 
