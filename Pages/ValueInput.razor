@@ -1,0 +1,102 @@
+﻿@page "/ValueInput"
+
+@using Managment_Studio_with_Blazor.Interface
+@inject IDataBaseService serves
+
+<h3>Column Management</h3>
+
+<p><strong>Select Table</strong></p>
+
+<div class="d-flex mb-3">
+    @if (dataa != null)
+    {
+        <select class="form-control" @bind="SelectedItem" style="max-width: 300px; margin-right: 10px;">
+            @foreach (var item in dataa)
+            {
+                <option value="@item">@item</option>
+            }
+        </select>
+    }
+    <button class="btn btn-primary mt-2" @onclick="LoadColumns">Load Columns</button>
+    <button class="btn btn-success mt-2" @onclick="StartAddNewItem">Add Item</button>
+</div>
+
+@if (IsAddingNewItem)
+{
+    <div class="mt-3">
+        @for (int i = 0; i < Columns.Count; i++)
+        {
+            <div class="mb-2">
+                <label>@Columns[i].Item1 (@Columns[i].Item2)</label>
+                <input type="text" class="form-control" @bind="NewRowValues[i]" />
+            </div>
+        }
+        <button class="btn btn-primary" @onclick="SaveNewItem">Save</button>
+        <button class="btn btn-secondary" @onclick="CancelAddNewItem">Cancel</button>
+    </div>
+}
+
+@code {
+
+    public ICollection<string> dataa { get; set; } = new List<string>();
+    public string SelectedItem { get; set; }
+    public List<(string, string)> Columns { get; set; } = new(); // Column Name and Type
+    public List<string> NewRowValues { get; set; } = new(); // New values to be added
+    public bool IsAddingNewItem { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        dataa = await serves.ListTableAsync();
+        SelectedItem = dataa.FirstOrDefault();
+    }
+
+    private async Task LoadColumns()
+    {
+        if (!string.IsNullOrEmpty(SelectedItem))
+        {
+            Columns = await serves.ListColumnAsync(SelectedItem); // Column names and types
+            NewRowValues = new List<string>(new string[Columns.Count]); // Initialize NewRowValues with empty strings
+        }
+    }
+
+    private void StartAddNewItem()
+    {
+        IsAddingNewItem = true;
+    }
+
+    private void CancelAddNewItem()
+    {
+        IsAddingNewItem = false;
+    }
+
+    private async Task SaveNewItem()
+    {
+        try
+        {
+
+            // Ensure NewRowValues has the correct number of values matching the columns
+            if (NewRowValues.Count == Columns.Count)
+            {
+                // Safely add values to the database
+                string result = await serves.ValueInputAsync(SelectedItem, NewRowValues);
+                if (!string.IsNullOrEmpty(result))
+                {
+                    Console.WriteLine("Item added successfully.");
+                    CancelAddNewItem(); // After successful save, stop adding new item
+                }
+                else
+                {
+                    Console.WriteLine("Failed to add item.");
+                }
+            }
+            else
+            {
+                Console.WriteLine("Invalid input. Please make sure all columns have values.");
+            }
+        }
+        catch(Exception ex)
+        {
+            Console.WriteLine(ex.Message);
+        }
+    }
+}

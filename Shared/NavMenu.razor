@@ -1,0 +1,134 @@
+﻿@inject NavigationManager Navigation
+
+<div class="top-row ps-3 navbar navbar-dark">
+    <div class="container-fluid">
+        <a class="navbar-brand" href="">Managment Studio</a>
+        <button title="Navigation menu" class="navbar-toggler" @onclick="ToggleNavMenu">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+    </div>
+</div>
+
+
+
+
+    <div class="@NavMenuCssClass nav-scrollable" @onclick="ToggleNavMenu">
+    <nav class="flex-column">
+        
+        <div class="nav-item px-3 custom-nav-item" style="border-bottom: 1px solid black; margin-bottom: 20px;">
+            <NavLink class="nav-link custom-nav-link" @onclick="@(() => Switching("ChangeDataBase"))">
+                <span class="oi oi-home" aria-hidden="true"></span> ChangeDataBase
+            </NavLink>
+        </div>
+
+
+
+        <div class="nav-item px-3 custom-nav-item" style="border-bottom: 1px solid black; margin-bottom: 20px;">
+            <NavLink class="nav-link custom-nav-link" @onclick="@(() => Switching("DataBase"))">
+                <span class="oi oi-home" aria-hidden="true"></span> DataBase
+            </NavLink>
+        </div>
+
+
+
+
+
+
+
+
+        
+        <div class="nav-item px-3 custom-nav-item" style="border-bottom: 1px solid black; margin-bottom: 20px;">
+            <NavLink class="nav-link custom-nav-link" @onclick="@(() => Switching("Table"))">
+                <span class="oi oi-home custom-icon" aria-hidden="true"></span> Table
+            </NavLink>
+        </div>
+       
+
+
+        <div class="nav-item px-3 custom-nav-item" style="border-bottom: 1px solid black; margin-bottom: 20px;">
+            <NavLink class="nav-link custom-nav-link" @onclick="@(() => Switching("Column"))">
+                <span class="oi oi-home" aria-hidden="true"></span> Column
+            </NavLink>
+        </div>
+
+        <div class="nav-item px-3 custom-nav-item" style="border-bottom: 1px solid black; margin-bottom: 20px;">
+            <NavLink class="nav-link custom-nav-link" @onclick="@(() => Switching("GetRows"))">
+                <span class="oi oi-home" aria-hidden="true"></span> GetRows
+            </NavLink>
+        </div>
+
+        <div class="nav-item px-3 custom-nav-item" style="border-bottom: 1px solid black; margin-bottom: 20px;">
+            <NavLink class="nav-link custom-nav-link" @onclick="@(() => Switching("Search"))">
+                <span class="oi oi-home" aria-hidden="true"></span> Search
+            </NavLink>
+        </div>
+
+        <div class="nav-item px-3 custom-nav-item" style="border-bottom: 1px solid black; margin-bottom: 20px;">
+            <NavLink class="nav-link custom-nav-link" @onclick="@(() => Switching("User"))">
+                <span class="oi oi-home" aria-hidden="true"></span> User
+            </NavLink>
+        </div>
+
+        <div class="nav-item px-3 custom-nav-item" style="border-bottom: 1px solid black; margin-bottom: 20px;">
+            <NavLink class="nav-link custom-nav-link" @onclick="@(() => Switching("ValueInput"))">
+                <span class="oi oi-home" aria-hidden="true"></span> ValueInput
+            </NavLink>
+        </div>
+
+        <div class="nav-item px-3 custom-nav-item" style="border-bottom: 1px solid black; margin-bottom: 20px;">
+            <NavLink class="nav-link custom-nav-link" @onclick="@(() => Switching("WriteQuery"))">
+                <span class="oi oi-home" aria-hidden="true"></span> WriteQuery
+            </NavLink>
+        </div>
+
+
+
+    </nav>
+</div>
+
+
+
+
+        <style>
+            .custom-nav-link {
+                font-size: 1.1rem; 
+            }
+        </style>
+
+
+
+
+
+
+
+@inherits LayoutComponentBase
+@code {
+
+    private void Switching(string PageName)
+    {
+        if(!Program.Menyu)
+            return;
+        else
+            switch (PageName)
+            {
+                case "ChangeDataBase": Navigation.NavigateTo("/ChangeDataBase"); break;
+                case "DataBase":   Navigation.NavigateTo("/DataBase");break;
+                case "Table":      Navigation.NavigateTo("/Table"); break;
+                case "Column":     Navigation.NavigateTo("/Column");break;
+                case "GetRows":    Navigation.NavigateTo("/GetRows");break;
+                case "Search":     Navigation.NavigateTo("/Search");break;
+                case "User":       Navigation.NavigateTo("/User");break;
+                case "ValueInput": Navigation.NavigateTo("/ValueInput");break;
+                case "WriteQuery": Navigation.NavigateTo("/WriteQuery");break;
+            }
+    }
+    private bool collapseNavMenu = true;
+
+    private string? NavMenuCssClass => collapseNavMenu ? "collapse" : null;
+
+    private void ToggleNavMenu()
+    {
+        collapseNavMenu = !collapseNavMenu;
+
+    }
+}

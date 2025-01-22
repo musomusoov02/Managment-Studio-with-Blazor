@@ -1,0 +1,34 @@
+﻿@page "/ChangeDataBase"
+
+@using Managment_Studio_with_Blazor.Interface
+
+@inject IDataBaseService serves
+
+<h3>ChangeDataBase</h3>
+
+
+<div class="d-flex mb-3">
+    @if (dataa != null)
+    {
+        <select class="form-control" @bind="SelectedItem" style="max-width: 300px; margin-right: 10px;">
+            @foreach (var item in dataa)
+            {
+                <option value="@item">@item</option>
+            }
+        </select>
+    }
+    <button class="btn btn-primary mt-2" @onclick="ChangeBaza">Load Columns</button>
+</div>
+
+@code {
+    public ICollection<string> dataa { get; set; }
+    public string SelectedItem { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        dataa = await serves.ListDataBaseAsync();
+        SelectedItem = dataa.FirstOrDefault();
+    }
+
+    public void ChangeBaza() => serves.ChangeDataBase(SelectedItem);
+}

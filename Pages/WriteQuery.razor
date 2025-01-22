@@ -1,0 +1,119 @@
+﻿@page "/WriteQuery"
+
+@using Managment_Studio_with_Blazor.Interface
+@inject IDataBaseService server
+@inject NavigationManager Navigation
+
+<h3>Query Execution</h3>
+
+<p>Enter your query below:</p>
+
+<textarea @bind="query" placeholder="Write your query here" class="form-control" style="height: 150px;"></textarea>
+
+<div class="mt-3 d-flex justify-content-start gap-2">
+    <button @onclick="OnSelectQueryButtonClick" class="btn btn-primary">Execute Select Query</button>
+    <button @onclick="OnChangeQueryButtonClick" class="btn btn-secondary">Execute Change Query</button>
+</div>
+
+<div class="mt-4">
+    @if (!string.IsNullOrEmpty(errorMessage) && errorMessage == "** Successful **")
+    {
+        <div style="color: green;">
+            <strong>Message:</strong> @errorMessage
+        </div>
+    }
+    else if (!string.IsNullOrEmpty(errorMessage))
+    {
+        <div style="color: red;">
+            <strong>Error:</strong> @errorMessage
+        </div>
+    }
+</div>
+
+<div class="table-responsive mt-4">
+    @if (ColumnsAndRowsAndTotal.Item1 != null && ColumnsAndRowsAndTotal.Item2 != null)
+    {
+        <table class="table table-bordered">
+            <thead>
+                <tr>
+                    @foreach (var column in ColumnsAndRowsAndTotal.Item1)
+                    {
+                        <th>@column</th>
+                    }
+                </tr>
+            </thead>
+            <tbody>
+                @for (int i = 0; i < ColumnsAndRowsAndTotal.Item2.Count; i += ColumnsAndRowsAndTotal.Item1.Count)
+                {
+                    <tr>
+                        @for (int j = 0; j < ColumnsAndRowsAndTotal.Item1.Count; j++)
+                        {
+                            <td>
+                                @if (i + j < ColumnsAndRowsAndTotal.Item2.Count)
+                                {
+                                    @ColumnsAndRowsAndTotal.Item2[i + j]
+                                }
+                            </td>
+                        }
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+</div>
+
+@code {
+    private string query = string.Empty;
+    private (List<string> Item1, List<string> Item2) ColumnsAndRowsAndTotal = (null, null);
+    private string errorMessage = string.Empty;
+
+    // SelectQuery button click handler
+    private async Task OnSelectQueryButtonClick()
+    {
+        await ExecuteQueryAsync(() => server.WriteSelectQueryAsync(query));
+    }
+
+    // ChangeQuery button click handler
+    private async Task OnChangeQueryButtonClick()
+    {
+        await ExecuteQueryAsync(() => server.WriteChangeQueryAsync(query));
+    }
+
+    // Generalized query execution method
+    private async Task ExecuteQueryAsync(Func<Task<(List<string>, List<string>, string)>> selectQueryFunc)
+    {
+        ClearPreviousResults();
+
+        if (string.IsNullOrWhiteSpace(query))
+        {
+            errorMessage = "Query cannot be empty.";
+            return;
+        }
+
+        var result = await selectQueryFunc();
+        ColumnsAndRowsAndTotal = (result.Item1, result.Item2);
+        errorMessage = result.Item3;
+    }
+
+    private async Task ExecuteQueryAsync(Func<Task<string>> changeQueryFunc)
+    {
+        ClearPreviousResults();
+
+        if (string.IsNullOrWhiteSpace(query))
+        {
+            errorMessage = "Query cannot be empty.";
+            return;
+        }
+
+        var result = await changeQueryFunc();
+
+        errorMessage = string.IsNullOrEmpty(result) ? "No rows were affected by the query." : result;
+    }
+
+    // Helper method to clear previous results
+    private void ClearPreviousResults()
+    {
+        ColumnsAndRowsAndTotal = (null, null);
+        errorMessage = string.Empty;
+    }
+}

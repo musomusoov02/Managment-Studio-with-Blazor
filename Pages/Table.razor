@@ -1,0 +1,154 @@
+﻿@page "/Table"
+@using Managment_Studio_with_Blazor.Interface
+
+@inject IDataBaseService serves
+@inject NavigationManager Navigation
+
+
+<div class="mb-3 custom-text-size">
+    <button class="btn btn-primary" @onclick="ToggleAddItem">Add Item</button>
+</div>
+
+@if (IsAddItemVisible)
+{
+    <div class="mb-3 custom-text-size">
+        <input type="text" @bind="NewTableName" placeholder="Enter Table Name" class="form-control" />
+        <button class="btn btn-success mt-2" @onclick="() => CreateTableAsync(NewTableName)">Create Table</button>
+        <button class="btn btn-secondary mt-2" @onclick="CancelAddItem">Cancel</button>
+    </div>
+}
+
+@if (ErrorMessage != null)
+{
+    <div class="alert alert-danger mt-3 custom-text-size">@ErrorMessage</div>
+}
+
+<table class="table table-bordered custom-text-size">
+    <thead>
+        <tr>
+            <th>Actions</th>
+            <th>Table Name</th>
+        </tr>
+    </thead>
+    <tbody>
+        @if (ListTable != null && ListTable.Any())
+        {
+            @foreach (var item in ListTable)
+            {
+                <tr>
+                    <td>
+                        @if (ItemToEdit == item)
+                        {
+                            <button class="btn btn-sm btn-success" @onclick="() => SaveEditedItem(item)">Save Changes</button>
+                            <button class="btn btn-sm btn-secondary" @onclick="CancelEditItem">Cancel</button>
+                        }
+                        else
+                        {
+                            <button class="btn btn-sm btn-warning" @onclick="() => StartEditItem(item)">Edit</button>
+                            <button class="btn btn-sm btn-danger" @onclick="() => DeleteItem(item)">Delete</button>
+                        }
+                    </td>
+                    <td>
+                        @if (ItemToEdit == item)
+                        {
+                            <input type="text" @bind="EditedTableName" class="form-control" />
+                        }
+                        else
+                        {
+                            @item
+                        }
+                    </td>
+                </tr>
+            }
+        }
+        else
+        {
+            <tr>
+                <td colspan="2" class="text-center custom-text-size">No Tables Found</td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+
+@code {
+    private string NewTableName { get; set; }
+    private string EditedTableName { get; set; }
+    private string ErrorMessage { get; set; }
+    private List<string> ListTable { get; set; } = new List<string>();
+    private bool IsAddItemVisible { get; set; } = false;
+    private string ItemToEdit { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        ListTable = await serves.ListTableAsync();
+    }
+
+    private void ToggleAddItem()
+    {
+        IsAddItemVisible = !IsAddItemVisible;
+    }
+
+    public async Task<bool> CreateTableAsync(string newTableName)
+    {
+        if (string.IsNullOrWhiteSpace(newTableName))
+        {
+            ErrorMessage = "Table name cannot be empty.";
+            return false;
+        }
+
+        var existingTables = await serves.ListTableAsync();
+        if (existingTables.Contains(newTableName))
+        {
+            ErrorMessage = "A table with this name already exists.";
+            return false;
+        }
+
+        await serves.CreateTableAsync(newTableName);
+
+        ListTable.Insert(0, newTableName);
+        ErrorMessage = null;
+        IsAddItemVisible = false;
+        return true;
+    }
+
+    private void StartEditItem(string tableName)
+    {
+        ItemToEdit = tableName;
+        EditedTableName = tableName;
+    }
+
+    private async Task SaveEditedItem(string oldTableName)
+    {
+        if (string.IsNullOrWhiteSpace(EditedTableName))
+        {
+            ErrorMessage = "Table name cannot be empty.";
+            return;
+        }
+
+        await serves.UpdateTableAsync(oldTableName, EditedTableName);
+
+        ListTable = await serves.ListTableAsync();
+        ItemToEdit = null;
+        ErrorMessage = null;
+        return;
+    }
+
+    private void CancelEditItem()
+    {
+        ItemToEdit = null;
+        ErrorMessage = null;
+    }
+
+    public async Task DeleteItem(string TableName)
+    {
+        await serves.DeleteTableAsync(TableName);
+        ListTable = await serves.ListTableAsync();
+    }
+
+    private void CancelAddItem()
+    {
+        IsAddItemVisible = false;
+        ErrorMessage = null;
+    }
+}

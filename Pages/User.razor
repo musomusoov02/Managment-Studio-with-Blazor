@@ -1,0 +1,68 @@
+﻿@page "/User"
+
+@using Managment_Studio_with_Blazor.Interface
+@inject IDataBaseService serves
+@inject NavigationManager Navigation
+
+<style>
+    .user-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 1.25rem;
+        text-align: left;
+        margin-top: 20px;
+    }
+
+        .user-table th, .user-table td {
+            padding: 15px;
+            border: 1px solid #ddd;
+        }
+
+        .user-table th {
+            background-color: #f2f2f2;
+            font-weight: bold;
+        }
+
+        .user-table td {
+            font-size: 1.1rem;
+        }
+
+        .user-table tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+</style>
+
+<h3>Users</h3>
+
+@if (users != null && users.Any())
+{
+    <table class="user-table">
+        <thead>
+            <tr>
+                <th style="text-align: left; background-color: #007bff; color: black; font-weight: bolder; padding: 12px; border-radius: 4px;">User Name</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var user in users)
+            {
+                <tr>
+                    <td>@user</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+else
+{
+    <p>No Users Found</p>
+}
+
+@code {
+    private List<string> users { get; set; } = new List<string>(); 
+
+    protected override async Task OnInitializedAsync()
+    {
+        users = await serves.ListUsersAsync();
+    }
+
+}

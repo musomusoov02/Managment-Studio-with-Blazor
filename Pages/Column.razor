@@ -1,0 +1,189 @@
+﻿@page "/Column"
+@using Managment_Studio_with_Blazor.Interface
+@inject IDataBaseService serves
+
+<h3>Column Management</h3>
+
+<p><strong>Select Table</strong></p>
+
+<div class="d-flex mb-3">
+    @if (dataa != null)
+    {
+        <select class="form-control" @bind="SelectedItem" style="max-width: 300px; margin-right: 10px;">
+            @foreach (var item in dataa)
+            {
+                <option value="@item">@item</option>
+            }
+        </select>
+    }
+    <button class="btn btn-primary mt-2" @onclick="LoadColumns">Load Columns</button> <!-- Load Columns button next to the select -->
+</div>
+
+<div class="mb-3">
+    <button class="btn btn-primary" @onclick="ToggleAddItem">Add Column</button>
+</div>
+
+@if (IsAddItemVisible)
+{
+    <div class="mb-3">
+        <input type="text" @bind="NewColumnName" placeholder="Enter Column Name" class="form-control mb-2" />
+        <select class="form-control mb-2" @bind="NewColumnType">
+            @foreach (PostgreSQLDataTypes type in Enum.GetValues(typeof(PostgreSQLDataTypes)))
+            {
+                <option value="@type">@type</option>
+            }
+        </select>
+        <button class="btn btn-success" @onclick="() => CreateColumnAsync(SelectedItem, NewColumnName, NewColumnType)">Add Column</button>
+        <button class="btn btn-secondary" @onclick="CancelAddItem">Cancel</button>
+    </div>
+}
+
+<table class="table table-bordered">
+    <thead>
+        <tr>
+            <!-- Actions Column (10%) -->
+            <th style="width: 10%;">Actions</th>
+
+            <!-- Column Name Column (50%) -->
+            <th style="width: 50%;">Column Name</th>
+
+            <!-- Data Type Column (40%) -->
+            <th style="width: 40%;">Data Type</th>
+        </tr>
+    </thead>
+    <tbody>
+        @if (Columns != null && Columns.Any())
+        {
+            @foreach (var column in Columns)
+            {
+                <tr>
+                    <!-- Actions Column (10%) -->
+                    <td style="text-align: center; padding: 5px;">
+                        <button class="btn btn-warning btn-sm" @onclick="() => StartEditColumn(column)">Edit</button>
+                        <button class="btn btn-danger btn-sm" @onclick="() => DeleteColumnAsync(SelectedItem, column.Item1)">Delete</button>
+                    </td>
+
+                    <!-- Column Name Column (50%) -->
+                    <td style="word-wrap: break-word; max-width: 200px; padding: 5px;">
+                        @column.Item1
+                    </td>
+
+                    <!-- Data Type Column (40%) -->
+                    <td style="word-wrap: break-word; max-width: 200px; padding: 5px;">
+                        @column.Item2
+                    </td>
+                </tr>
+            }
+        }
+        else
+        {
+            <tr>
+                <td colspan="3" class="text-center">No Columns Found</td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+@code {
+    public ICollection<string> dataa { get; set; }
+    public string SelectedItem { get; set; }
+    private List<(string, string)> Columns = new List<(string, string)>();
+
+    private bool IsAddItemVisible { get; set; } = false;
+    private string NewColumnName { get; set; } = string.Empty;
+    private PostgreSQLDataTypes NewColumnType { get; set; } = PostgreSQLDataTypes.Text;
+
+    protected override async Task OnInitializedAsync()
+    {
+        dataa = await serves.ListTableAsync();
+        SelectedItem = dataa.FirstOrDefault();
+    }
+
+    private async Task LoadColumns()
+    {
+        if (!string.IsNullOrEmpty(SelectedItem))
+        {
+            Columns = await serves.ListColumnAsync(SelectedItem);
+        }
+    }
+
+    private void ToggleAddItem()
+    {
+        IsAddItemVisible = !IsAddItemVisible;
+    }
+
+    private async Task CreateColumnAsync(string tableName, string columnName, PostgreSQLDataTypes columnType)
+    {
+        if (!string.IsNullOrWhiteSpace(columnName))
+        {
+            // Create the column on the server
+            await serves.CreateColumnAsync(tableName, columnName, columnType.ToString());
+
+            // Reload the columns from the database
+            var columns = await serves.ListColumnAsync(tableName);
+
+            // Add the new column to the front of the list
+            Columns.Insert(0, (columnName, columnType.ToString()));
+
+            // Optionally, reload the columns after inserting, to ensure consistency
+            // Columns = columns;
+
+            CancelAddItem();
+        }
+    }
+
+    private void CancelAddItem()
+    {
+        IsAddItemVisible = false;
+        NewColumnName = string.Empty;
+        NewColumnType = PostgreSQLDataTypes.Text;
+    }
+
+    private async Task DeleteColumnAsync(string tableName, string columnName)
+    {
+        await serves.DeleteColumnAsync(tableName, columnName);
+        await LoadColumns();
+    }
+
+    private void StartEditColumn((string, string) column)
+    {
+        // Add logic for editing a column (if needed)
+    }
+
+    #region PostgreSQLDataTypes
+    private enum PostgreSQLDataTypes
+    {
+        Text,
+        Integer,
+        Bigint,
+        Smallint,
+        Boolean,
+        Date,
+        Timestamp,
+        TimestampWithTimeZone,
+        Time,
+        TimeWithTimeZone,
+        Numeric,
+        Decimal,
+        Real,
+        DoublePrecision,
+        Char,
+        Varchar,
+        Json,
+        Jsonb,
+        Bytea,
+        UUID,
+        Point,
+        Lseg,
+        Path,
+        Polygon,
+        Circle,
+        Money,
+        Inet,
+        Macaddr,
+        Interval,
+        Bit,
+        BitVarying
+    }
+    #endregion
+}

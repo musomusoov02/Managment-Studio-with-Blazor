@@ -1,0 +1,110 @@
+﻿
+@page "/Open"
+
+@using Managment_Studio_with_Blazor.Config
+@using Managment_Studio_with_Blazor.Data
+@using Managment_Studio_with_Blazor.Interface
+
+
+@inject IDataBaseService serves
+@inject NavigationManager Navigation
+
+@if (Error)
+{
+    if (Message == "ConnectionString Error!!!!!!!!!!")
+    {
+        <h3 style="color: red; font-weight: bold;">@Message</h3>
+    }
+    else
+    {
+        <h3 style="color: green; font-weight: bold;">@Message</h3>
+    }
+}
+else 
+{
+    <h3>ConnectionString</h3>
+}
+
+<EditForm Model="databaseConfig" OnValidSubmit="HandleSubmit">
+    <DataAnnotationsValidator />
+    <ValidationSummary />
+
+    <div class="input-group">
+        <label for="server">Server [localhost]:</label>
+        <InputText id="server" @bind-Value="databaseConfig.Server" />
+    </div>
+
+    <div class="input-group">
+        <label for="database">Database [postgres]:</label>
+        <InputText id="database" @bind-Value="databaseConfig.Database" />
+    </div>
+
+    <div class="input-group">
+        <label for="port">Port [5432]:</label>
+        <InputNumber id="port" @bind-Value="databaseConfig.Port" />
+    </div>
+
+    <div class="input-group">
+        <label for="username">Username [postgres]:</label>
+        <InputText id="username" @bind-Value="databaseConfig.Username" />
+    </div>
+
+    <div class="input-group">
+        <label for="password">Password:</label>
+        <InputText id="password" type="password" @bind-Value="databaseConfig.Password" />
+    </div>
+
+    <button class="btn btn-primary" type="submit">Submit</button>
+</EditForm>
+
+
+
+@code {
+
+    private bool Error =false;
+    private string Message = "";
+
+
+    private DatabaseConfig databaseConfig = new DatabaseConfig
+    {
+        Server = "localhost",
+        Database = "postgres",
+        Port = 5432,
+        Username = "postgres",
+        Password = ""
+    };
+
+    private async Task HandleSubmit()
+    {
+        var result = await serves.OpenConnectionStringAsync(
+                                    databaseConfig.Server,
+                                    databaseConfig.Database,
+                                    databaseConfig.Port,
+                                    databaseConfig.Username,
+                                    databaseConfig.Password
+        );
+        if (result.Item1 == null)
+        {
+            Program.Menyu = false;
+            Message = "ConnectionString Error!!!!!!!!!!";
+            Error = true;
+            return;
+        }
+        else if(result.Item2)
+        {
+            Program.ConnectionString = result.Item1;
+            Program.Menyu = true;
+            Navigation.NavigateTo("/GetRows");
+        }
+        else
+        {
+            Program.ConnectionString = result.Item1;
+            Program.Menyu = true;
+            Message = "New Database Created";
+            Error = true;
+            StateHasChanged();
+            await Task.Delay(2000);
+            Navigation.NavigateTo("/GetRows");
+        }
+    }
+}

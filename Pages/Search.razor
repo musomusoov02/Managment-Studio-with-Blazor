@@ -1,0 +1,175 @@
+﻿@page "/Search"
+
+@using Managment_Studio_with_Blazor.Interface
+@inject IDataBaseService serves
+
+<h3>Column Management</h3>
+
+<p><strong>Select Table</strong></p>
+
+<div class="d-flex mb-3">
+    @if (dataa != null)
+    {
+        <select class="form-control" @bind="SelectedItem" style="max-width: 300px; margin-right: 10px;">
+            @foreach (var item in dataa)
+            {
+                <option value="@item">@item</option>
+            }
+        </select>
+    }
+    <button class="btn btn-primary mt-2" @onclick="LoadColumns">Load Columns</button>
+</div>
+
+<div class="d-flex justify-content-between mb-2">
+    <button class="btn btn-secondary" @onclick="PreviousPage" disabled="@(!CanGoPrevious)">Previous</button>
+    <span>Page: @PageNumber / @PageTotal</span>
+    <span>Total Rows: @ColumnsAndRowsAndTotal.Item3</span>
+    <button class="btn btn-secondary" @onclick="NextPage" disabled="@(!CanGoNext)">Next</button>
+</div>
+
+<div class="mb-3">
+    <label>Rows per Page:</label>
+    <input type="number" min="1" class="form-control" style="max-width: 100px;" @bind="PageSize" />
+</div>
+
+<div class="d-flex mb-3">
+    <label>Search Column:</label>
+    <select class="form-control" @bind="SearchColumn" style="max-width: 150px; margin-right: 10px;">
+        @if (ColumnsAndRowsAndTotal.Item1 != null && ColumnsAndRowsAndTotal.Item1.Any())
+        {
+            @foreach (var column in ColumnsAndRowsAndTotal.Item1)
+            {
+                <option value="@column">@column</option>
+            }
+        }
+    </select>
+    <input type="text" class="form-control" style="max-width: 300px; margin-right: 10px;" @bind="SearchText" placeholder="Enter search text" />
+    <button class="btn btn-primary" @onclick="SearchRows">Search</button>
+</div>
+
+<div class="table-responsive">
+    @if (ColumnsAndRowsAndTotal.Item1 != null && ColumnsAndRowsAndTotal.Item2 != null)
+    {
+        <table class="table table-bordered">
+            <thead>
+                <tr>
+                    @foreach (var column in ColumnsAndRowsAndTotal.Item1)
+                    {
+                        <th>@column</th>
+                    }
+                </tr>
+            </thead>
+            <tbody>
+                @for (int i = 0; i < ColumnsAndRowsAndTotal.Item2.Count; i += ColumnsAndRowsAndTotal.Item1.Count)
+                {
+                    <tr>
+                        @for (int j = 0; j < ColumnsAndRowsAndTotal.Item1.Count; j++)
+                        {
+                            <td>
+                                @if (i + j < ColumnsAndRowsAndTotal.Item2.Count)
+                                {
+                                    @ColumnsAndRowsAndTotal.Item2[i + j]
+                                }
+                            </td>
+                        }
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+    else
+    {
+        <div class="alert alert-warning">No Columns or Rows Found</div>
+    }
+</div>
+
+@code {
+    public ICollection<string> dataa { get; set; }
+    public string SelectedItem { get; set; }
+    public (List<string>, List<string>, int) ColumnsAndRowsAndTotal;
+    public int PageNumber { get; set; } = 1;
+    public int PageTotal { get; set; }
+    public int PageSize { get; set; } = 10;
+    private int Offset => (PageNumber - 1) * PageSize;
+    public bool CanGoPrevious => PageNumber > 1;
+    public bool CanGoNext => Offset + PageSize < ColumnsAndRowsAndTotal.Item3;
+    public string OldColumn { get; set; }
+    public string SearchColumn { get; set; }
+    public string SearchText { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        dataa = await serves.ListTableAsync();
+        SelectedItem = dataa.FirstOrDefault();
+        await LoadColumns(); // Initial loading of columns
+    }
+
+    private async Task LoadColumns()
+    {
+        if (!string.IsNullOrEmpty(SelectedItem))
+        {
+            if (OldColumn != SelectedItem)
+            {
+                PageNumber = 1;
+                OldColumn = SelectedItem;
+            }
+            ColumnsAndRowsAndTotal = await serves.GetRowsAsync(SelectedItem, PageSize, Offset);
+
+            if (ColumnsAndRowsAndTotal.Item1 == null || !ColumnsAndRowsAndTotal.Item1.Any())
+            {
+                ColumnsAndRowsAndTotal = (new List<string>(), new List<string>(), 0);
+            }
+            else
+            {
+                // Set the default search column to the first column
+                SearchColumn = ColumnsAndRowsAndTotal.Item1.FirstOrDefault();
+            }
+
+            PageTotal = (ColumnsAndRowsAndTotal.Item3 + PageSize - 1) / PageSize;
+            StateHasChanged();
+        }
+    }
+
+    private async Task PreviousPage()
+    {
+        if (CanGoPrevious)
+        {
+            PageNumber--;
+            await LoadColumns();
+        }
+    }
+
+    private async Task NextPage()
+    {
+        if (CanGoNext)
+        {
+            PageNumber++;
+            await LoadColumns();
+        }
+    }
+
+    private async Task SearchRows()
+    {
+        if (!string.IsNullOrEmpty(SearchColumn) && !string.IsNullOrEmpty(SearchText))
+        {
+            if (OldColumn != SelectedItem)
+            {
+                PageNumber = 1;
+                OldColumn = SelectedItem;
+            }
+            ColumnsAndRowsAndTotal = await serves.SearchAsync(SelectedItem, SearchColumn, SearchText, PageSize, Offset);
+
+            if (ColumnsAndRowsAndTotal.Item1 == null || !ColumnsAndRowsAndTotal.Item1.Any())
+            {
+                ColumnsAndRowsAndTotal = (new List<string>(), new List<string>(), 0);
+            }
+
+            PageTotal = (ColumnsAndRowsAndTotal.Item3 + PageSize - 1) / PageSize;
+        }
+        else
+        {
+            await LoadColumns();
+        }
+        StateHasChanged();
+    }
+}
